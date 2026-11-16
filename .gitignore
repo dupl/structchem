@@ -1,0 +1,10 @@
+# 可由 npm install / 脚本重建的依赖与临时产物
+tools/node_modules/
+tools/shots/
+
+# Python / 编辑器临时文件
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log

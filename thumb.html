@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>缩略图生成（离线构建用）</title>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/chevrotain.min.js"></script>
+<script src="vendor/VRMLLoader.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="assets/core.js"></script>
+<script src="data/index.js"></script>
+</head>
+<body>
+<div id="status">ready</div>
+<script>
+window.renderThumbById = async function (id, w, h, mode) {
+  const text = await WRL.load(id);
+  return WRLCore.renderThumb(text, w || 360, h || 270, mode || 'dark');
+};
+window.thumbIds = function () { return WRL.index().map(function (e) { return e.id; }); };
+</script>
+</body>
+</html>

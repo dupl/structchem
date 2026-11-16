@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>结构化学 · 三维模型图谱</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none">
+          <ellipse cx="16" cy="16" rx="12" ry="4.6" stroke="#cfe1ff" stroke-width="1.6" transform="rotate(-32 16 16)"/>
+          <ellipse cx="16" cy="16" rx="12" ry="4.6" stroke="#8fb6f5" stroke-width="1.6" transform="rotate(32 16 16)"/>
+          <ellipse cx="16" cy="16" rx="12" ry="4.6" stroke="#e8f1ff" stroke-width="1.6"/>
+          <circle cx="16" cy="16" r="2.4" fill="#ffd27a"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>结构化学 · 三维模型图谱</h1>
+        <p>孙宏伟教授课件 · VRML 原子轨道 / 分子结构 / 点群对称</p>
+      </div>
+    </div>
+
+    <div class="searchwrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>
+      </svg>
+      <input id="search" type="search" autocomplete="off" spellcheck="false"
+             placeholder="搜索模型：1s、2p、3d、CH4、苯、C2v、石英 …">
+      <div class="search-keys">
+        <button class="clear-btn" id="clearBtn" title="清空" aria-label="清空">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <kbd>/</kbd>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <div class="tabs" id="tabs">
+        <button data-view="search" class="active">检索</button>
+        <button data-view="gallery">总览</button>
+      </div>
+      <button class="icon-btn" id="randomBtn" title="随机看一个模型" aria-label="随机看一个模型"></button>
+      <div class="count-pill"><b id="totalCount">0</b> 个模型</div>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div class="side-scroll">
+        <p class="side-label">模型分类</p>
+        <div class="chips" id="groupChips"></div>
+        <div class="quick">
+          <p class="side-label">快捷检索</p>
+          <div class="chips" id="quickChips"></div>
+        </div>
+      </div>
+      <div class="result-head">
+        <span>共 <b id="resultCount">0</b> 个结果</span>
+        <span id="resultHint">按相关度排序</span>
+      </div>
+      <div class="results" id="results"></div>
+    </aside>
+
+    <section class="workspace" id="workspace">
+      <div class="stage" id="stage">
+        <div class="stage-title">
+          <div class="eyebrow" id="stageEyebrow">ATOMIC ORBITAL</div>
+          <h2 id="stageName">—</h2>
+          <p id="stageSub">从左侧选择一个模型开始浏览</p>
+        </div>
+
+        <div class="toolbar" id="toolbar"></div>
+
+        <div class="stage-foot">
+          <div class="legend">
+            <span><i style="background:#f0504a"></i>x 轴</span>
+            <span><i style="background:#3fd07a"></i>y 轴</span>
+            <span><i style="background:#5b8cff"></i>z 轴</span>
+            <span class="hint">拖动旋转 · 滚轮缩放 · 右键平移</span>
+          </div>
+          <div class="stage-stats" id="stageStats"></div>
+        </div>
+
+        <div class="overlay" id="overlay">
+          <div class="overlay-inner">
+            <div class="spinner"></div>
+            <p id="overlayText">正在解析三维模型…</p>
+            <small id="overlaySub">首次加载需要读取模型数据</small>
+          </div>
+        </div>
+
+        <div class="empty" id="empty">
+          <div>
+            <div class="glyph">ψ</div>
+            <h3>没有找到匹配的模型</h3>
+            <p>试试 1s、2p、3d、CH4、苯、C2v 或 石英</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="infobar">
+        <div class="info-main">
+          <div class="info-title">
+            <strong id="infoName">—</strong>
+            <span class="q" id="infoQuantum" hidden></span>
+          </div>
+          <p class="info-desc" id="infoDesc">选择模型后可查看说明</p>
+          <p class="info-path" id="infoPath"></p>
+        </div>
+        <div class="info-tags" id="infoTags"></div>
+        <div class="info-actions">
+          <button class="btn" id="copyBtn">复制路径</button>
+          <button class="btn primary" id="openBtn">打开原文件</button>
+        </div>
+      </div>
+
+      <div class="gallery-wrap" id="galleryWrap">
+        <div class="gallery-head">
+          <h2>全部模型</h2>
+          <span id="galleryHint"></span>
+        </div>
+        <div class="gallery" id="gallery"></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="statusbar">
+    <span><i class="dot"></i>本地离线运行 · 数据来自 D:\结构化学\孙宏伟</span>
+    <span>three.js WebGL 渲染 · 258 个 VRML 模型</span>
+    <span class="right" id="statusRight">就绪</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/chevrotain.min.js"></script>
+<script src="vendor/VRMLLoader.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="assets/core.js"></script>
+<script src="data/index.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
