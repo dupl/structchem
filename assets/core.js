@@ -48,13 +48,16 @@
   };
 
   function makeRenderer(w, h) {
+    var coarse = global.matchMedia && global.matchMedia('(pointer: coarse)').matches;
+    var maxRatio = coarse ? 1.5 : 2;
     var r = new THREE.WebGLRenderer({
       antialias: true,
       alpha: false,
       preserveDrawingBuffer: true,
       powerPreference: 'high-performance'
     });
-    r.setPixelRatio(Math.min(global.devicePixelRatio || 1, 2));
+    // 高分屏手机按 3x 渲染几十万三角面会明显掉帧，触屏设备上限 1.5x
+    r.setPixelRatio(Math.min(global.devicePixelRatio || 1, maxRatio));
     r.setSize(w, h, false);
     r.outputEncoding = THREE.sRGBEncoding;
     return r;
@@ -189,6 +192,11 @@
     var self = this;
     this._onResize = function () { self.resize(); };
     global.addEventListener('resize', this._onResize);
+    // iOS 上虚拟键盘弹出/收起不一定触发 window.resize
+    if (global.visualViewport) {
+      this._onVVResize = function () { self.resize(); };
+      global.visualViewport.addEventListener('resize', this._onVVResize);
+    }
     if (typeof ResizeObserver !== 'undefined') {
       this._ro = new ResizeObserver(function () { self.resize(); });
       this._ro.observe(container);
@@ -292,6 +300,9 @@
   Viewer.prototype.destroy = function () {
     this.running = false;
     global.removeEventListener('resize', this._onResize);
+    if (this._onVVResize && global.visualViewport) {
+      global.visualViewport.removeEventListener('resize', this._onVVResize);
+    }
     if (this._ro) this._ro.disconnect();
   };
 

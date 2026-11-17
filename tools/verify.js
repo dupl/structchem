@@ -36,7 +36,7 @@ const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
     canvas: !!document.querySelector('canvas.wrl-canvas'),
     info: document.getElementById('infoDesc').textContent,
     brokenThumbs: Array.from(document.querySelectorAll('.thumb img'))
-      .filter(i => !i.complete || i.naturalWidth === 0).length
+      .filter(i => i.complete && i.naturalWidth === 0).length
   }));
   console.log('初始状态:', JSON.stringify(base));
   await page.screenshot({ path: path.join(SHOTS, '01-initial.png') });

@@ -25,6 +25,7 @@
     { key: 'side', label: '侧视（沿 x）' }
   ];
 
+  var isLocal = location.protocol === 'file:';
   var all = WRL.index().slice();
   var byId = Object.create(null);
   all.forEach(function (e) { byId[e.id] = e; });
@@ -204,7 +205,7 @@
     el('stageSub').textContent = e.chapter + ' · ' + e.chapterName + ' · ' + e.name + '.wrl';
     el('infoName').textContent = e.name + '.wrl';
     el('infoDesc').textContent = e.desc;
-    el('infoPath').textContent = e.abs;
+    el('infoPath').textContent = isLocal ? e.abs : e.file;
     el('infoQuantum').textContent = e.quantum || '';
     el('infoQuantum').hidden = !e.quantum;
     el('infoTags').innerHTML = e.tags.slice(0, 4).map(function (t) {
@@ -240,6 +241,7 @@
     });
     el('workspace').classList.toggle('gallery-mode', view === 'gallery');
     el('galleryWrap').classList.toggle('show', view === 'gallery');
+    el('app').classList.toggle('view-gallery', view === 'gallery');
     if (view === 'gallery') renderGallery();
     else if (viewer) setTimeout(function () { viewer.resize(); }, 30);
   }
@@ -338,6 +340,9 @@
 
   function bindEvents() {
     var input = el('search');
+    // 手机键盘弹起时，让三维舞台占满可视区；收起后结果列表自动回来
+    input.addEventListener('focus', function () { document.body.classList.add('searching'); });
+    input.addEventListener('blur', function () { document.body.classList.remove('searching'); });
     input.addEventListener('input', function () {
       state.query = input.value;
       el('clearBtn').classList.toggle('show', !!input.value);
@@ -430,6 +435,10 @@
   function init() {
     el('totalCount').textContent = all.length;
     el('randomBtn').innerHTML = ICONS.dice;
+    if (!isLocal) {
+      document.body.classList.add('online');
+      el('statusSource').innerHTML = '<i class="dot"></i>在线浏览 · 数据来自孙宏伟教授课件 VRML 模型';
+    }
     buildChips();
     buildToolbar();
     try {
