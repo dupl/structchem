@@ -99,6 +99,42 @@ kbd {
 .clear-btn:hover { background: var(--line-2); color: var(--ink); }
 .clear-btn.show { display: grid; }
 
+/* 搜索候选下拉：键盘弹起时也能看见并点选 2py / 2pz 等同类结果 */
+.suggest {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+  z-index: 40; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--shadow-m); padding: 6px;
+  max-height: min(56vh, 420px); overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.suggest[hidden] { display: none; }
+.suggest-head, .suggest-foot {
+  font-size: 11px; color: var(--muted); padding: 5px 9px 7px;
+}
+.suggest-foot {
+  text-align: center; color: var(--accent); cursor: pointer;
+  border-top: 1px solid var(--line-2); margin-top: 4px; padding: 9px;
+}
+.suggest-foot:hover { background: var(--accent-soft); border-radius: 0 0 7px 7px; }
+.suggest-row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 6px 8px; border-radius: 9px; cursor: pointer;
+}
+.suggest-row:hover, .suggest-row.active { background: var(--accent-soft); }
+.s-thumb {
+  width: 58px; height: 42px; flex: none; border-radius: 7px; overflow: hidden;
+  background: #0d1726; display: grid; place-items: center;
+}
+.s-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.s-thumb .ph { color: #46618a; font-family: var(--font-display); font-size: 18px; font-style: italic; }
+.s-main { min-width: 0; }
+.s-name { font-size: 13px; font-weight: 650; color: var(--ink); }
+.s-desc {
+  font-size: 11px; color: var(--muted); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
 .top-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .tabs { display: flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
 .tabs button {
@@ -483,12 +519,14 @@ body.online .info-actions { display: none; }
 @media (max-width: 420px) {
   .brand-prefix { display: none; }
 }
-/* 窄屏（含手机横屏）：键盘弹起或总览模式下，把结果面板让给舞台 */
+/* 窄屏：搜索时结果列表始终保留（键盘弹起时由搜索框下方的候选下拉负责选择）；
+   只有总览模式才收起侧栏。不要再隐藏 .sidebar —— 否则搜 2p 只能看到 2px。 */
 @media (max-width: 950px) {
-  body.searching .sidebar { display: none; }
-  body.searching .workspace { padding-bottom: 10px; }
   .app.view-gallery .sidebar { display: none; }
   .app.view-gallery .workspace { flex: 1 1 100%; }
+  .suggest { max-height: min(44vh, 340px); }
+  .suggest-row { min-height: 56px; }
+  .suggest-head, .suggest-foot { font-size: 11.5px; }
 }
 
 /* 手机横屏：恢复左右分栏，避免舞台被压得过矮 */

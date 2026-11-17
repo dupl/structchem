@@ -127,7 +127,55 @@ function layout() {
         sidebar: getComputedStyle(document.querySelector('.sidebar')).display
       }));
 
-      // 工具条按钮可点击（切换浅色背景）
+      // 回归：搜 2p 命中 3 个模型，必须能直接点选 2py / 2pz，
+      // 不能像旧版那样把结果面板 display:none 只留下自动渲染的 2px
+      await page.evaluate(() => {
+        const s = document.getElementById('search');
+        s.value = '';
+        s.dispatchEvent(new Event('input', { bubbles: true }));
+        s.focus();
+      });
+      await page.type('#search', '2p');
+      await new Promise(r => setTimeout(r, 1000));
+      const suggest2p = await page.evaluate(() => {
+        const sg = document.getElementById('suggest');
+        const sb = document.querySelector('.sidebar');
+        return {
+          searching: document.body.classList.contains('searching'),
+          suggestHidden: sg.hidden,
+          rows: Array.from(sg.querySelectorAll('.suggest-row')).map(x => x.getAttribute('data-id')),
+          sidebar: getComputedStyle(sb).display,
+          sidebarH: Math.round(sb.getBoundingClientRect().height),
+          resultCount: document.getElementById('resultCount').textContent,
+          stage: document.getElementById('stageName').textContent
+        };
+      });
+      await page.screenshot({ path: path.join(SHOTS, 'mobile-search-2p.png') });
+      await page.click('#suggest .suggest-row[data-id="2py"]');
+      await new Promise(r => setTimeout(r, 1300));
+      const pickSuggest = await page.evaluate(() => ({
+        stage: document.getElementById('stageName').textContent,
+        searching: document.body.classList.contains('searching'),
+        overlay: document.getElementById('overlay').className
+      }));
+      await page.click('.card[data-id="2pz"]');
+      await new Promise(r => setTimeout(r, 1300));
+      const pickList = await page.evaluate(() => ({
+        stage: document.getElementById('stageName').textContent,
+        active: document.querySelector('.card.active') &&
+                document.querySelector('.card.active').getAttribute('data-id'),
+        overlay: document.getElementById('overlay').className
+      }));
+      await page.screenshot({ path: path.join(SHOTS, 'mobile-search-2p-picked.png') });
+
+      // 点搜索框以外的地方会自动收起键盘（这里点结果计数条，避开候选浮层）
+      await page.focus('#search');
+      const headBox = await page.evaluate(() => {
+        const r = document.querySelector('.result-head').getBoundingClientRect();
+        return { x: Math.round(r.x + 24), y: Math.round(r.y + r.height / 2) };
+      });
+      await page.mouse.click(headBox.x, headBox.y);
+      const tapOutside = await page.evaluate(() => document.body.classList.contains('searching'));
       await page.click('#tbBg');
       const light = await page.evaluate(() => document.getElementById('stage').classList.contains('light'));
       await page.click('#tbBg');
@@ -158,7 +206,8 @@ function layout() {
         stage: document.getElementById('stageName').textContent,
         overlay: document.getElementById('overlay').className
       }));
-      report.interaction = { focused, searched, blurred, light, gallery, otherId, back, errors: errors.slice(-5) };
+      report.interaction = { focused, searched, blurred, suggest2p, pickSuggest, pickList,
+                             tapOutside, light, gallery, otherId, back, errors: errors.slice(-5) };
       await page.screenshot({ path: path.join(SHOTS, 'mobile-after-card.png') });
     }
     await page.close();

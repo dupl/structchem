@@ -106,6 +106,7 @@
     el('resultCount').textContent = list.length;
     el('resultHint').textContent = q ? '按相关度排序' : '按章节排列';
     renderResults();
+    renderSuggest();
     if (state.view === 'gallery') renderGallery();
   }
 
@@ -144,6 +145,42 @@
       );
     });
     root.innerHTML = html.join('');
+  }
+
+  /* 输入时的候选下拉：手机上键盘会盖住底部列表，候选必须出现在搜索框旁边 */
+  var SUGGEST_LIMIT = 12;
+  function renderSuggest() {
+    var box = el('suggest');
+    var q = state.query.trim();
+    // 桌面侧栏常驻可见，不需要浮层；只在窄屏（含手机横屏）启用
+    var narrow = window.matchMedia('(max-width: 950px)').matches;
+    if (!narrow || !document.body.classList.contains('searching') || !q ||
+        state.view === 'gallery' || !state.filtered.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    var rows = state.filtered.slice(0, SUGGEST_LIMIT).map(function (e) {
+      return '<div class="suggest-row' + (state.selected === e.id ? ' active' : '') +
+             '" data-id="' + escapeHtml(e.id) + '">' + thumbHtml(e, 's-thumb') +
+             '<div class="s-main"><div class="s-name">' + highlight(e.name) + '</div>' +
+             '<div class="s-desc">' + escapeHtml(e.group + ' · ' + e.desc) + '</div></div></div>';
+    }).join('');
+    box.innerHTML =
+      '<div class="suggest-head">共 ' + state.filtered.length + ' 个匹配 · 点选即可切换模型</div>' +
+      rows +
+      (state.filtered.length > SUGGEST_LIMIT
+        ? '<div class="suggest-foot" data-more="1">还有 ' +
+          (state.filtered.length - SUGGEST_LIMIT) + ' 个结果 · 收起键盘查看全部</div>'
+        : '') +
+      '<div class="suggest-foot" data-close="1">收起键盘，滑动下方完整列表</div>';
+    box.hidden = false;
+  }
+
+  function syncSuggestActive() {
+    Array.prototype.forEach.call(el('suggest').querySelectorAll('.suggest-row'), function (r) {
+      r.classList.toggle('active', r.getAttribute('data-id') === state.selected);
+    });
   }
 
   function renderGallery() {
@@ -199,6 +236,7 @@
     if (!e) return;
     state.selected = id;
     updateActiveCards();
+    syncSuggestActive();
 
     el('stageName').innerHTML = e.pretty;
     el('stageEyebrow').textContent = e.group.toUpperCase();
@@ -236,6 +274,7 @@
 
   function setView(view) {
     state.view = view;
+    el('suggest').hidden = true;
     Array.prototype.forEach.call(el('tabs').children, function (b) {
       b.classList.toggle('active', b.getAttribute('data-view') === view);
     });
@@ -286,6 +325,7 @@
           } catch (err) { toast('截图失败：' + err.message); }
         } },
       { id: 'tbFull', icon: 'expand', title: '全屏查看', act: function () {
+          el('search').blur();
           var s = el('stage');
           if (document.fullscreenElement) document.exitFullscreen();
           else if (s.requestFullscreen) s.requestFullscreen();
@@ -340,9 +380,37 @@
 
   function bindEvents() {
     var input = el('search');
-    // 手机键盘弹起时，让三维舞台占满可视区；收起后结果列表自动回来
-    input.addEventListener('focus', function () { document.body.classList.add('searching'); });
-    input.addEventListener('blur', function () { document.body.classList.remove('searching'); });
+    // 聚焦只用来控制候选下拉；结果列表始终保留，不再整块隐藏
+    input.addEventListener('focus', function () {
+      document.body.classList.add('searching');
+      renderSuggest();
+    });
+    input.addEventListener('blur', function () {
+      document.body.classList.remove('searching');
+      renderSuggest();
+    });
+    // iOS 键盘上的「搜索」键
+    input.addEventListener('search', function () { input.blur(); });
+    // 浮层内按下时不要抢走焦点，否则随后的 click 会落空
+    el('suggest').addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+    el('suggest').addEventListener('click', function (ev) {
+      var row = ev.target.closest('.suggest-row');
+      if (row) {
+        select(row.getAttribute('data-id'));
+        input.blur();
+        return;
+      }
+      if (ev.target.closest('[data-more], [data-close]')) {
+        input.blur();
+        updateActiveCards();
+      }
+    });
+    // 点搜索框以外的地方就收起键盘，底部结果列表随即可以滑动
+    document.addEventListener('pointerdown', function (ev) {
+      if (!document.body.classList.contains('searching')) return;
+      if (ev.target.closest && ev.target.closest('.searchwrap')) return;
+      input.blur();
+    }, true);
     input.addEventListener('input', function () {
       state.query = input.value;
       el('clearBtn').classList.toggle('show', !!input.value);
