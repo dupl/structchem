@@ -127,8 +127,8 @@ function layout() {
         sidebar: getComputedStyle(document.querySelector('.sidebar')).display
       }));
 
-      // 回归：搜 2p 命中 3 个模型，必须能直接点选 2py / 2pz，
-      // 不能像旧版那样把结果面板 display:none 只留下自动渲染的 2px
+      // 回归：搜 2p 命中 3 个模型，底部结果列表必须常驻且可直接滑动点选 2py / 2pz；
+      // 不依赖任何下拉浮层，也不需要「退出全屏」之类的绕路操作
       await page.evaluate(() => {
         const s = document.getElementById('search');
         s.value = '';
@@ -137,30 +137,37 @@ function layout() {
       });
       await page.type('#search', '2p');
       await new Promise(r => setTimeout(r, 1000));
-      const suggest2p = await page.evaluate(() => {
-        const sg = document.getElementById('suggest');
+      const list2p = await page.evaluate(() => {
         const sb = document.querySelector('.sidebar');
+        const rs = document.getElementById('results');
+        const cards = Array.from(document.querySelectorAll('.card'));
         return {
           searching: document.body.classList.contains('searching'),
-          suggestHidden: sg.hidden,
-          rows: Array.from(sg.querySelectorAll('.suggest-row')).map(x => x.getAttribute('data-id')),
+          hasSuggest: !!document.getElementById('suggest'),
           sidebar: getComputedStyle(sb).display,
           sidebarH: Math.round(sb.getBoundingClientRect().height),
+          resultsH: Math.round(rs.getBoundingClientRect().height),
           resultCount: document.getElementById('resultCount').textContent,
+          cards: cards.map(c => c.getAttribute('data-id')),
+          visibleCards: cards.filter(c => {
+            const r = c.getBoundingClientRect();
+            return r.height > 0 && r.top < innerHeight && r.bottom > 0;
+          }).length,
           stage: document.getElementById('stageName').textContent
         };
       });
       await page.screenshot({ path: path.join(SHOTS, 'mobile-search-2p.png') });
-      await page.click('#suggest .suggest-row[data-id="2py"]');
+      // 输入框仍聚焦时直接点列表卡片：pointerdown 收键盘后，click 必须仍然命中
+      await page.click('.card[data-id="2py"]');
       await new Promise(r => setTimeout(r, 1300));
-      const pickSuggest = await page.evaluate(() => ({
+      const pick2py = await page.evaluate(() => ({
         stage: document.getElementById('stageName').textContent,
         searching: document.body.classList.contains('searching'),
         overlay: document.getElementById('overlay').className
       }));
       await page.click('.card[data-id="2pz"]');
       await new Promise(r => setTimeout(r, 1300));
-      const pickList = await page.evaluate(() => ({
+      const pick2pz = await page.evaluate(() => ({
         stage: document.getElementById('stageName').textContent,
         active: document.querySelector('.card.active') &&
                 document.querySelector('.card.active').getAttribute('data-id'),
@@ -168,7 +175,7 @@ function layout() {
       }));
       await page.screenshot({ path: path.join(SHOTS, 'mobile-search-2p-picked.png') });
 
-      // 点搜索框以外的地方会自动收起键盘（这里点结果计数条，避开候选浮层）
+      // 点搜索框以外的地方会自动收起键盘（这里点结果计数条）
       await page.focus('#search');
       const headBox = await page.evaluate(() => {
         const r = document.querySelector('.result-head').getBoundingClientRect();
@@ -206,7 +213,7 @@ function layout() {
         stage: document.getElementById('stageName').textContent,
         overlay: document.getElementById('overlay').className
       }));
-      report.interaction = { focused, searched, blurred, suggest2p, pickSuggest, pickList,
+      report.interaction = { focused, searched, blurred, list2p, pick2py, pick2pz,
                              tapOutside, light, gallery, otherId, back, errors: errors.slice(-5) };
       await page.screenshot({ path: path.join(SHOTS, 'mobile-after-card.png') });
     }
